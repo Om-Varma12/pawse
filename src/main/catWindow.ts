@@ -3,6 +3,7 @@ import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 import { closeNativeWindow, closeActiveTab } from './actions/win32';
 import { store } from './settingsStore';
+import { getActiveTabCoordinates } from './detector/activeWindowSource';
 
 let catWindow: BrowserWindow | null = null;
 let patrolInterval: NodeJS.Timeout | null = null;
@@ -187,9 +188,18 @@ export async function triggerDistractionApproach(
       targetCloseX = winBounds.x + winBounds.width - 45;
       targetCloseY = winBounds.y + 20;
     } else {
-      // Browser tab close button is roughly near top-left (first few tabs area)
-      targetCloseX = winBounds.x + 220;
-      targetCloseY = winBounds.y + 22;
+      // Browser tab close button coordinates
+      // Query the exact coordinates using UI Automation via PowerShell
+      const tabCoords = await getActiveTabCoordinates(rule.hwnd);
+      if (tabCoords) {
+        // Tab close button is on the right side of the active tab, roughly 16px from its right boundary
+        targetCloseX = tabCoords.left + tabCoords.width - 16;
+        targetCloseY = tabCoords.top + tabCoords.height / 2;
+      } else {
+        // Fallback: target the top-center of the active window (middle of the tab strip)
+        targetCloseX = winBounds.x + winBounds.width / 2;
+        targetCloseY = winBounds.y + 22;
+      }
     }
 
     // Offset the cat window so the swatting paw (approx x=150, y=110 in 220x220 space) hits targetClose coordinates

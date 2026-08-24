@@ -120,7 +120,7 @@ export function matchActiveWindow(win: { title: string; owner: { name: string } 
   const processName = win.owner.name.toLowerCase();
 
   // Debug: log active window so you can see what Pawse is detecting
-  console.log(`[detector] Active window — process: "${win.owner.name}" | title: "${win.title}"`);
+  console.log(`[detector] Active window - process: "${win.owner.name}" | title: "${win.title}"`);
 
   for (const rule of rules) {
     if (!rule.enabled) continue;
@@ -136,7 +136,7 @@ export function matchActiveWindow(win: { title: string; owner: { name: string } 
       try {
         const regex = new RegExp(rule.titleRegex, 'i');
         if (regex.test(win.title)) {
-          console.log(`[detector] ✅ MATCH — rule: "${rule.id}" for title: "${win.title}"`);
+          console.log(`[detector] MATCH - rule: "${rule.id}" for title: "${win.title}"`);
           return rule;
         }
       } catch (err) {
@@ -144,7 +144,7 @@ export function matchActiveWindow(win: { title: string; owner: { name: string } 
       }
     } else {
       // No title regex → process name match alone is sufficient (native apps)
-      console.log(`[detector] ✅ MATCH — rule: "${rule.id}" via process name`);
+      console.log(`[detector] MATCH - rule: "${rule.id}" via process name`);
       return rule;
     }
   }
