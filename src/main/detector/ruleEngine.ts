@@ -14,126 +14,135 @@ export interface Rule {
   confidence: 'high' | 'low' | 'unsupported';
 }
 
+/** The canonical default rules — used as source of truth for definitions. */
+const BUILT_IN_DEFAULTS: Rule[] = [
+  {
+    id: 'tiktok-app',
+    label: 'TikTok (desktop app)',
+    matchType: 'nativeApp',
+    process: ['TikTok.exe'],
+    titleRegex: null,
+    closeAction: 'wm-close',
+    enabled: true,
+    confidence: 'high'
+  },
+  {
+    id: 'tiktok-web',
+    label: 'TikTok (browser)',
+    matchType: 'browserTab',
+    process: ['chrome.exe', 'msedge.exe', 'firefox.exe', 'brave.exe', 'opera.exe'],
+    titleRegex: 'TikTok',
+    closeAction: 'ctrl-w',
+    enabled: true,
+    confidence: 'high'
+  },
+  {
+    id: 'instagram-web',
+    label: 'Instagram (browser) — coarse, catches all of Instagram, not just Reels',
+    matchType: 'browserTab',
+    process: ['chrome.exe', 'msedge.exe', 'firefox.exe', 'brave.exe', 'opera.exe'],
+    titleRegex: 'Instagram',
+    closeAction: 'ctrl-w',
+    enabled: true,
+    confidence: 'low'
+  },
+  {
+    id: 'youtube-shorts',
+    label: 'YouTube Shorts (browser) — coarse, matches all of YouTube',
+    matchType: 'browserTab',
+    process: ['chrome.exe', 'msedge.exe', 'firefox.exe', 'brave.exe', 'opera.exe'],
+    titleRegex: 'YouTube',
+    closeAction: 'ctrl-w',
+    enabled: false,
+    confidence: 'unsupported'
+  }
+];
+
 /**
- * Loads rules from electron-store or falls back to default-rules.json in the project root.
+ * Loads canonical rule definitions from default-rules.json, falling back to built-in defaults.
+ * The `enabled` state is then overlaid with per-rule user overrides from electron-store.
+ *
+ * This approach ensures new rule definitions always ship correctly even across app updates,
+ * while preserving only what the user explicitly toggled.
  */
 export function getRules(): Rule[] {
-  let rules = store.get('rules') as Rule[];
-  
-  // Migration check: Ensure instagram-web is enabled by default for existing users
-  const isMigrated = store.get('migrated_instagram_rule_v2', false);
-  if (rules && !isMigrated) {
-    rules = rules.map((r) => r.id === 'instagram-web' ? { ...r, enabled: true } : r);
-    store.set('rules', rules);
-    store.set('migrated_instagram_rule_v2', true);
-  }
-
-  if (!rules) {
-    try {
-      const rootPath = app.getAppPath();
-      // Look for default-rules.json in rules/ relative to app path
-      let defaultRulesPath = path.join(rootPath, 'rules', 'default-rules.json');
-      
-      // Fallback path in case of different dev layout
-      if (!fs.existsSync(defaultRulesPath)) {
-        defaultRulesPath = path.join(rootPath, '..', 'rules', 'default-rules.json');
-      }
-
-      if (fs.existsSync(defaultRulesPath)) {
-        const fileContent = fs.readFileSync(defaultRulesPath, 'utf8');
-        rules = JSON.parse(fileContent);
-      } else {
-        // Hardcoded default rules fallback
-        rules = [
-          {
-            id: "tiktok-app",
-            label: "TikTok (desktop app)",
-            matchType: "nativeApp",
-            process: ["TikTok.exe"],
-            titleRegex: null,
-            closeAction: "wm-close",
-            enabled: true,
-            confidence: "high"
-          },
-          {
-            id: "tiktok-web",
-            label: "TikTok (browser)",
-            matchType: "browserTab",
-            process: ["chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe"],
-            titleRegex: "TikTok",
-            closeAction: "ctrl-w",
-            enabled: true,
-            confidence: "high"
-          },
-          {
-            id: "instagram-web",
-            label: "Instagram (browser) — coarse, catches all of Instagram, not just Reels",
-            matchType: "browserTab",
-            process: ["chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe"],
-            titleRegex: "Instagram",
-            closeAction: "ctrl-w",
-            enabled: true,
-            confidence: "low"
-          },
-          {
-            id: "youtube-shorts",
-            label: "YouTube Shorts (browser) — coarse, matches all of YouTube",
-            matchType: "browserTab",
-            process: ["chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe"],
-            titleRegex: "YouTube",
-            closeAction: "ctrl-w",
-            enabled: false,
-            confidence: "unsupported"
-          }
-        ];
-      }
-      store.set('rules', rules);
-      store.set('migrated_instagram_rule_v2', true);
-    } catch (err) {
-      console.error('Failed to load default rules:', err);
-      rules = [];
+  // 1. Load canonical rule definitions (schema + defaults)
+  let baseRules: Rule[] = BUILT_IN_DEFAULTS;
+  try {
+    const rootPath = app.getAppPath();
+    let defaultRulesPath = path.join(rootPath, 'rules', 'default-rules.json');
+    if (!fs.existsSync(defaultRulesPath)) {
+      defaultRulesPath = path.join(rootPath, '..', 'rules', 'default-rules.json');
     }
+    if (fs.existsSync(defaultRulesPath)) {
+      const parsed = JSON.parse(fs.readFileSync(defaultRulesPath, 'utf8')) as Rule[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        baseRules = parsed;
+      }
+    }
+  } catch (err) {
+    console.error('[ruleEngine] Failed to read default-rules.json, using built-in defaults:', err);
   }
-  return rules;
+
+  // 2. Load per-rule user toggle overrides: { ruleId -> enabled }
+  const userToggles = (store.get('ruleToggles') || {}) as Record<string, boolean>;
+
+  // 3. Merge: apply user overrides on top of the canonical base rules
+  const mergedRules = baseRules.map((rule) => {
+    if (rule.id in userToggles) {
+      return { ...rule, enabled: userToggles[rule.id] };
+    }
+    return rule;
+  });
+
+  return mergedRules;
 }
 
 /**
- * Saves modified rules back to the electron-store.
+ * Saves user-toggled rule enabled states.
+ * Only stores the per-rule enabled overrides, not the full rule definition.
+ * This way, rule definitions always come from default-rules.json.
  */
 export function saveRules(rules: Rule[]): void {
-  store.set('rules', rules);
+  const toggles: Record<string, boolean> = {};
+  rules.forEach((r) => { toggles[r.id] = r.enabled; });
+  store.set('ruleToggles', toggles);
 }
 
 /**
- * Checks an active window details against the rule set.
+ * Checks active window details against the enabled rule set.
  * Returns the matched Rule, or null if no rule matches.
+ * Logs active window details for debugging.
  */
 export function matchActiveWindow(win: { title: string; owner: { name: string } }): Rule | null {
   const rules = getRules();
   const processName = win.owner.name.toLowerCase();
-  
+
+  // Debug: log active window so you can see what Pawse is detecting
+  console.log(`[detector] Active window — process: "${win.owner.name}" | title: "${win.title}"`);
+
   for (const rule of rules) {
     if (!rule.enabled) continue;
-    
-    // Check if the process matches
-    const processMatch = rule.process.some(p => p.toLowerCase() === processName);
+
+    const processMatch = rule.process.some((p) => p.toLowerCase() === processName);
     if (!processMatch) continue;
-    
-    // Check if the title matches (if regex is provided)
+
     if (rule.titleRegex) {
       try {
         const regex = new RegExp(rule.titleRegex, 'i');
         if (regex.test(win.title)) {
+          console.log(`[detector] ✅ MATCH — rule: "${rule.id}" for title: "${win.title}"`);
           return rule;
         }
       } catch (err) {
-        console.error(`Invalid regex for rule ${rule.id}:`, err);
+        console.error(`[detector] Invalid regex for rule ${rule.id}:`, err);
       }
     } else {
-      // If no title regex, process name match is sufficient (for native apps)
+      // No title regex → process name match alone is sufficient (native apps)
+      console.log(`[detector] ✅ MATCH — rule: "${rule.id}" via process name`);
       return rule;
     }
   }
-  
+
   return null;
 }
