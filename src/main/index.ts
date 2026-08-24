@@ -2,9 +2,10 @@ import { app, shell, BrowserWindow, ipcMain, Menu, Tray } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
-import { createCatWindow } from './catWindow';
+import { createCatWindow, getCatWindow } from './catWindow';
 import { startDetectorLoop, stopDetectorLoop } from './detector';
 import { getRules, saveRules } from './detector/ruleEngine';
+import { store } from './settingsStore';
 
 let settingsWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -119,6 +120,23 @@ app.whenReady().then(() => {
       openAtLogin: enable,
       path: app.getPath('exe')
     });
+    return true;
+  });
+
+  ipcMain.handle('settings:get-show-cat', () => {
+    return store.get('showCat', true);
+  });
+
+  ipcMain.handle('settings:set-show-cat', (_event, value: boolean) => {
+    store.set('showCat', value);
+    const catWin = getCatWindow();
+    if (catWin) {
+      if (value) {
+        catWin.show();
+      } else {
+        catWin.hide();
+      }
+    }
     return true;
   });
 

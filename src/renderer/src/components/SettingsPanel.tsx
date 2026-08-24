@@ -14,6 +14,7 @@ interface Rule {
 const SettingsPanel: React.FC = () => {
   const [rules, setRules] = useState<Rule[]>([]);
   const [autostart, setAutostart] = useState<boolean>(false);
+  const [showCat, setShowCat] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
 
   useEffect(() => {
@@ -22,8 +23,10 @@ const SettingsPanel: React.FC = () => {
       try {
         const fetchedRules = await window.electron.ipcRenderer.invoke('rules:get');
         const fetchedAutostart = await window.electron.ipcRenderer.invoke('settings:get-autostart');
+        const fetchedShowCat = await window.electron.ipcRenderer.invoke('settings:get-show-cat');
         setRules(fetchedRules || []);
         setAutostart(!!fetchedAutostart);
+        setShowCat(fetchedShowCat !== undefined ? !!fetchedShowCat : true);
       } catch (err) {
         console.error('Failed to load settings from main process:', err);
       }
@@ -63,6 +66,19 @@ const SettingsPanel: React.FC = () => {
     }
   };
 
+  const handleShowCatToggle = async () => {
+    const nextValue = !showCat;
+    setShowCat(nextValue);
+    setSaving(true);
+    try {
+      await window.electron.ipcRenderer.invoke('settings:set-show-cat', nextValue);
+    } catch (err) {
+      console.error('Failed to update showCat setting:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="settings-container">
       <header className="settings-header">
@@ -72,7 +88,7 @@ const SettingsPanel: React.FC = () => {
 
       <section className="settings-section">
         <h2>App Settings</h2>
-        <div className="settings-card">
+        <div className="settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div className="settings-row">
             <div className="settings-info">
               <span className="settings-label">Start with Windows</span>
@@ -83,6 +99,21 @@ const SettingsPanel: React.FC = () => {
                 type="checkbox" 
                 checked={autostart} 
                 onChange={handleAutostartToggle}
+              />
+              <span className="slider"></span>
+            </label>
+          </div>
+          <div style={{ borderTop: '1px solid #303030', margin: '0' }} />
+          <div className="settings-row">
+            <div className="settings-info">
+              <span className="settings-label">Show Pawse on Screen</span>
+              <span className="settings-description">Toggle whether Pawse the cat is visible patrolling your screen</span>
+            </div>
+            <label className="toggle-switch">
+              <input 
+                type="checkbox" 
+                checked={showCat} 
+                onChange={handleShowCatToggle}
               />
               <span className="slider"></span>
             </label>

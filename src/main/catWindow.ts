@@ -2,6 +2,7 @@ import { BrowserWindow, screen, ipcMain, shell } from 'electron';
 import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 import { closeNativeWindow, closeActiveTab } from './actions/win32';
+import { store } from './settingsStore';
 
 let catWindow: BrowserWindow | null = null;
 let patrolInterval: NodeJS.Timeout | null = null;
@@ -41,7 +42,10 @@ export function createCatWindow(): BrowserWindow {
   catWindow.setAlwaysOnTop(true, 'screen-saver');
 
   catWindow.on('ready-to-show', () => {
-    catWindow?.show();
+    const showCat = store.get('showCat', true);
+    if (showCat) {
+      catWindow?.show();
+    }
     sendCatState('idle');
     startPatrol();
   });
@@ -130,11 +134,9 @@ export function startPatrol(): void {
       const primaryDisplay = screen.getPrimaryDisplay();
       const { width, height } = primaryDisplay.workArea;
 
-      // Pick a random spot, biasing towards bottom edges
+      // Pick a random spot anywhere on the screen
       const targetX = Math.floor(Math.random() * (width - 220));
-      const targetY = Math.random() < 0.7 
-        ? height - 220 // Stay on taskbar/bottom
-        : Math.floor(Math.random() * (height - 220));
+      const targetY = Math.floor(Math.random() * (height - 220));
 
       sendCatState('walk');
       isAnimating = true;

@@ -1,7 +1,7 @@
-import Store from 'electron-store';
 import fs from 'fs';
 import path from 'path';
 import { app } from 'electron';
+import { store } from '../settingsStore';
 
 export interface Rule {
   id: string;
@@ -14,14 +14,20 @@ export interface Rule {
   confidence: 'high' | 'low' | 'unsupported';
 }
 
-const StoreClass = ((Store as any).default || Store) as typeof Store;
-const store = new StoreClass<{ rules: Rule[] }>();
-
 /**
  * Loads rules from electron-store or falls back to default-rules.json in the project root.
  */
 export function getRules(): Rule[] {
   let rules = store.get('rules') as Rule[];
+  
+  // Migration check: Ensure instagram-web is enabled by default for existing users
+  const isMigrated = store.get('migrated_instagram_rule_v2', false);
+  if (rules && !isMigrated) {
+    rules = rules.map((r) => r.id === 'instagram-web' ? { ...r, enabled: true } : r);
+    store.set('rules', rules);
+    store.set('migrated_instagram_rule_v2', true);
+  }
+
   if (!rules) {
     try {
       const rootPath = app.getAppPath();
@@ -66,7 +72,7 @@ export function getRules(): Rule[] {
             process: ["chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe"],
             titleRegex: "Instagram",
             closeAction: "ctrl-w",
-            enabled: false,
+            enabled: true,
             confidence: "low"
           },
           {
@@ -82,6 +88,7 @@ export function getRules(): Rule[] {
         ];
       }
       store.set('rules', rules);
+      store.set('migrated_instagram_rule_v2', true);
     } catch (err) {
       console.error('Failed to load default rules:', err);
       rules = [];

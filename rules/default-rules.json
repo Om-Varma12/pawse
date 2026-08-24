@@ -26,7 +26,7 @@
     "process": ["chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe"],
     "titleRegex": "Instagram",
     "closeAction": "ctrl-w",
-    "enabled": false,
+    "enabled": true,
     "confidence": "low"
   },
   {
