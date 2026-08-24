@@ -1,0 +1,42 @@
+[
+  {
+    "id": "tiktok-app",
+    "label": "TikTok (desktop app)",
+    "matchType": "nativeApp",
+    "process": ["TikTok.exe"],
+    "titleRegex": null,
+    "closeAction": "wm-close",
+    "enabled": true,
+    "confidence": "high"
+  },
+  {
+    "id": "tiktok-web",
+    "label": "TikTok (browser)",
+    "matchType": "browserTab",
+    "process": ["chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe"],
+    "titleRegex": "TikTok",
+    "closeAction": "ctrl-w",
+    "enabled": true,
+    "confidence": "high"
+  },
+  {
+    "id": "instagram-web",
+    "label": "Instagram (browser) — coarse, catches all of Instagram, not just Reels",
+    "matchType": "browserTab",
+    "process": ["chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe"],
+    "titleRegex": "Instagram",
+    "closeAction": "ctrl-w",
+    "enabled": false,
+    "confidence": "low"
+  },
+  {
+    "id": "youtube-shorts",
+    "label": "YouTube Shorts (browser) — coarse, matches all of YouTube",
+    "matchType": "browserTab",
+    "process": ["chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe"],
+    "titleRegex": "YouTube",
+    "closeAction": "ctrl-w",
+    "enabled": false,
+    "confidence": "unsupported"
+  }
+]

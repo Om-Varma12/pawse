@@ -1,0 +1,460 @@
+/* Transparent Window Defaults */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent !important;
+  overflow: hidden;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-app-region: no-drag;
+}
+
+/* Settings view solid background */
+body:has(.settings-container) {
+  background-color: #181818 !important;
+  overflow-y: auto;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+/* --- CAT CONTAINER & RENDERER --- */
+.cat-container {
+  width: 220px;
+  height: 220px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.cat-svg {
+  cursor: grab;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+.cat-svg:active {
+  cursor: grabbing;
+}
+
+/* Tail Waving Animation */
+.tail-path {
+  transform-origin: 50px 98px;
+  animation: tail-wave 1.2s ease-in-out infinite alternate;
+}
+@keyframes tail-wave {
+  0% { transform: rotate(-8deg); }
+  100% { transform: rotate(18deg); }
+}
+
+/* Walking feet keyframes */
+@keyframes walk-leg-1 {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-4px) translateX(2px); }
+  100% { transform: translateY(0); }
+}
+@keyframes walk-leg-2 {
+  0% { transform: translateY(-4px) translateX(2px); }
+  50% { transform: translateY(0); }
+  100% { transform: translateY(-4px) translateX(2px); }
+}
+
+/* Apply walking animations during walk/approach states */
+.state-walk .front-leg-main,
+.state-approach .front-leg-main {
+  animation: walk-leg-1 0.2s linear infinite;
+}
+.state-walk .back-leg-main,
+.state-approach .back-leg-main {
+  animation: walk-leg-2 0.2s linear infinite;
+}
+.state-walk .front-leg-behind,
+.state-approach .front-leg-behind {
+  animation: walk-leg-2 0.2s linear infinite;
+}
+.state-walk .back-leg-behind,
+.state-approach .back-leg-behind {
+  animation: walk-leg-1 0.2s linear infinite;
+}
+
+/* Sitting State */
+.state-sit .cat-body,
+.state-sit .cat-head-group,
+.state-sit .tail-wrapper {
+  transform: translateY(10px);
+  transition: transform 0.3s ease;
+}
+.state-sit .leg {
+  transform: translateY(-8px) scaleY(0.2);
+  transition: transform 0.3s ease;
+}
+
+/* Swatting Paw Animation */
+.swatting-paw {
+  opacity: 0;
+  transform-origin: 104px 115px;
+}
+.state-swat .swatting-paw {
+  opacity: 1;
+  animation: swat-swipe 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.state-swat .front-leg-main {
+  opacity: 0; /* Hide standard leg during swatting */
+}
+@keyframes swat-swipe {
+  0% { transform: rotate(-35deg) scaleX(0.8); }
+  35% { transform: rotate(20deg) scaleX(1.3) translateX(12px) translateY(-5px); }
+  100% { transform: rotate(0deg); }
+}
+
+/* Petting Reaction State */
+.state-pet .cat-eye {
+  transform: scaleY(0.15) translateY(20px);
+  transform-origin: center;
+}
+.state-pet .cat-blush {
+  opacity: 0.8;
+}
+.state-pet .cat-render-group {
+  animation: pet-bounce 0.4s ease-in-out infinite;
+}
+@keyframes pet-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Happy / Purr State */
+.state-happy .cat-eye {
+  transform: scaleY(0.2) translateY(18px);
+  transform-origin: center;
+}
+.state-happy .cat-blush {
+  opacity: 0.7;
+}
+.state-happy .cat-render-group {
+  animation: purr-vibrate 0.15s ease-in-out infinite;
+}
+@keyframes purr-vibrate {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px) scaleY(1.01); }
+}
+
+/* Angry Reaction State */
+.state-angry .cat-head-group {
+  animation: angry-shake 0.1s ease-in-out infinite;
+}
+.state-angry .cat-eye {
+  transform: scaleY(0.5); /* Intense eyes */
+}
+@keyframes angry-shake {
+  0% { transform: translateX(-1px) translateY(1px); }
+  50% { transform: translateX(1px) translateY(-1px); }
+  100% { transform: translateX(-1px) translateY(1px); }
+}
+
+/* Blush indicators */
+.cat-blush {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Floating Love Hearts */
+.heart-pop {
+  position: absolute;
+  font-size: 20px;
+  animation: heart-float 1.2s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes heart-float {
+  0% { transform: translateY(0) scale(0.5); opacity: 1; }
+  100% { transform: translateY(-60px) scale(1.3); opacity: 0; }
+}
+
+/* --- SPEECH BUBBLE --- */
+.speech-bubble {
+  position: absolute;
+  top: 10px;
+  background-color: #ffffff;
+  color: #333333;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  border: 2px solid #3d3534;
+  white-space: nowrap;
+  animation: bubble-pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  z-index: 100;
+  pointer-events: none;
+}
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 8px 0;
+  border-style: solid;
+  border-color: #ffffff transparent;
+}
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 9px 9px 0;
+  border-style: solid;
+  border-color: #3d3534 transparent;
+  z-index: -1;
+}
+
+.emotion-cute {
+  background-color: #e6f7e8;
+  border-color: #2c6e39;
+}
+.emotion-cute::after { border-color: #e6f7e8 transparent; }
+.emotion-cute::before { border-color: #2c6e39 transparent; }
+
+.emotion-disappointed {
+  background-color: #fff4e5;
+  border-color: #b76e00;
+}
+.emotion-disappointed::after { border-color: #fff4e5 transparent; }
+.emotion-disappointed::before { border-color: #b76e00 transparent; }
+
+.emotion-angry {
+  background-color: #ffe6e6;
+  border-color: #b30000;
+  color: #b30000;
+  animation: shake-bubble 0.15s ease-in-out infinite;
+}
+.emotion-angry::after { border-color: #ffe6e6 transparent; }
+.emotion-angry::before { border-color: #b30000 transparent; }
+
+@keyframes bubble-pop {
+  0% { transform: translateY(10px) scale(0.8); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes shake-bubble {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(2px); }
+}
+
+/* --- SETTINGS PANEL UI --- */
+.settings-container {
+  max-width: 580px;
+  margin: 30px auto;
+  padding: 20px;
+  color: #e0e0e0;
+}
+
+.settings-header {
+  border-bottom: 1px solid #333;
+  padding-bottom: 15px;
+  margin-bottom: 25px;
+}
+
+.settings-header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #ffffff;
+}
+
+.settings-subtitle {
+  margin: 5px 0 0 0;
+  color: #888;
+  font-size: 14px;
+}
+
+.settings-section {
+  margin-bottom: 30px;
+}
+
+.settings-section h2 {
+  font-size: 16px;
+  color: #aaa;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.section-desc {
+  font-size: 13px;
+  color: #777;
+  margin-top: -8px;
+  margin-bottom: 15px;
+}
+
+.settings-card {
+  background: #202020;
+  border-radius: 8px;
+  border: 1px solid #303030;
+  padding: 15px;
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-label {
+  font-weight: 600;
+  color: #fff;
+  font-size: 15px;
+}
+
+.settings-description {
+  font-size: 13px;
+  color: #888;
+  margin-top: 3px;
+}
+
+/* Toggle Switch Styling */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #3a3a3a;
+  transition: .2s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .2s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #4CAF50;
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+/* Rules Cards */
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rule-card {
+  background: #202020;
+  border: 1px solid #303030;
+  border-radius: 8px;
+  padding: 15px;
+  transition: border-color 0.2s;
+}
+.rule-card:hover {
+  border-color: #404040;
+}
+
+.rule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rule-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rule-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rule-label {
+  font-weight: 600;
+  color: #fff;
+  font-size: 15px;
+}
+
+.confidence-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.confidence-high {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4CAF50;
+}
+.confidence-low {
+  background: rgba(255, 152, 0, 0.15);
+  color: #FF9800;
+}
+.confidence-unsupported {
+  background: rgba(158, 158, 158, 0.15);
+  color: #9E9E9E;
+}
+
+.rule-process {
+  font-size: 12px;
+  color: #888;
+}
+
+.rule-process code {
+  background: #2d2d2d;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: Consolas, monospace;
+  color: #ccc;
+}
+
+.saving-indicator {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  animation: bubble-pop 0.2s ease-out;
+}
