@@ -14,7 +14,8 @@ export interface Rule {
   confidence: 'high' | 'low' | 'unsupported';
 }
 
-const store = new Store<{ rules: Rule[] }>();
+const StoreClass = ((Store as any).default || Store) as typeof Store;
+const store = new StoreClass<{ rules: Rule[] }>();
 
 /**
  * Loads rules from electron-store or falls back to default-rules.json in the project root.
