@@ -178,15 +178,29 @@ export async function triggerDistractionApproach(
     sendCatState('notice');
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    // 2. Approach: Move to bottom-center of the target window
-    const targetX = Math.round(winBounds.x + winBounds.width / 2 - 110);
-    const targetY = Math.round(winBounds.y + winBounds.height - 180);
+    // Calculate target coordinates based on native window close button or browser tab location
+    let targetCloseX = 0;
+    let targetCloseY = 0;
+
+    if (rule.matchType === 'nativeApp') {
+      // Native close button is top-right corner
+      targetCloseX = winBounds.x + winBounds.width - 45;
+      targetCloseY = winBounds.y + 20;
+    } else {
+      // Browser tab close button is roughly near top-left (first few tabs area)
+      targetCloseX = winBounds.x + 220;
+      targetCloseY = winBounds.y + 22;
+    }
+
+    // Offset the cat window so the swatting paw (approx x=150, y=110 in 220x220 space) hits targetClose coordinates
+    const targetX = Math.round(targetCloseX - 150);
+    const targetY = Math.round(targetCloseY - 110);
     
-    // Ensure boundaries are on-screen
+    // Ensure boundaries are on-screen (allowing slight negative Y so the cat can reach screen top menu/tabs)
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width, height } = primaryDisplay.workArea;
     const boundedX = Math.max(0, Math.min(width - 220, targetX));
-    const boundedY = Math.max(0, Math.min(height - 220, targetY));
+    const boundedY = Math.max(-80, Math.min(height - 220, targetY));
 
     sendCatState('approach');
     await tweenWindowTo(boundedX, boundedY, 1500);
