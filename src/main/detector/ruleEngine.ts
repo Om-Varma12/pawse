@@ -20,7 +20,8 @@ const BUILT_IN_DEFAULTS: Rule[] = [
     id: 'tiktok-app',
     label: 'TikTok (desktop app)',
     matchType: 'nativeApp',
-    process: ['TikTok.exe'],
+    // get-windows returns display name on Windows, not .exe filename
+    process: ['TikTok', 'tiktok'],
     titleRegex: null,
     closeAction: 'wm-close',
     enabled: true,
@@ -30,7 +31,7 @@ const BUILT_IN_DEFAULTS: Rule[] = [
     id: 'tiktok-web',
     label: 'TikTok (browser)',
     matchType: 'browserTab',
-    process: ['chrome.exe', 'msedge.exe', 'firefox.exe', 'brave.exe', 'opera.exe'],
+    process: ['chrome', 'edge', 'firefox', 'brave', 'opera'],
     titleRegex: 'TikTok',
     closeAction: 'ctrl-w',
     enabled: true,
@@ -40,7 +41,7 @@ const BUILT_IN_DEFAULTS: Rule[] = [
     id: 'instagram-web',
     label: 'Instagram (browser) — coarse, catches all of Instagram, not just Reels',
     matchType: 'browserTab',
-    process: ['chrome.exe', 'msedge.exe', 'firefox.exe', 'brave.exe', 'opera.exe'],
+    process: ['chrome', 'edge', 'firefox', 'brave', 'opera'],
     titleRegex: 'Instagram',
     closeAction: 'ctrl-w',
     enabled: true,
@@ -50,7 +51,7 @@ const BUILT_IN_DEFAULTS: Rule[] = [
     id: 'youtube-shorts',
     label: 'YouTube Shorts (browser) — coarse, matches all of YouTube',
     matchType: 'browserTab',
-    process: ['chrome.exe', 'msedge.exe', 'firefox.exe', 'brave.exe', 'opera.exe'],
+    process: ['chrome', 'edge', 'firefox', 'brave', 'opera'],
     titleRegex: 'YouTube',
     closeAction: 'ctrl-w',
     enabled: false,
@@ -124,7 +125,11 @@ export function matchActiveWindow(win: { title: string; owner: { name: string } 
   for (const rule of rules) {
     if (!rule.enabled) continue;
 
-    const processMatch = rule.process.some((p) => p.toLowerCase() === processName);
+    // get-windows on Windows returns display name (e.g. "Google Chrome"), not exe filename.
+    // Use substring matching so "chrome" matches "Google Chrome", "edge" matches "Microsoft Edge" etc.
+    const processMatch = rule.process.some((p) =>
+      processName.includes(p.toLowerCase())
+    );
     if (!processMatch) continue;
 
     if (rule.titleRegex) {
